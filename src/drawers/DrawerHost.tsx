@@ -5,6 +5,7 @@ import { EmployeeDrawer } from '@/features/employees/EmployeeDrawer'
 import { EmployeeFormDrawer } from '@/features/employees/EmployeeFormDrawer'
 import { PositionFormDrawer } from '@/features/employees/PositionFormDrawer'
 import { JobTitleFormDrawer } from '@/features/job-titles/JobTitleFormDrawer'
+import { UserDrawer } from '@/features/users/UserDrawer'
 import { useDrawer } from './useDrawer'
 
 /** Lee `?drawer=` e `?id=` y monta el drawer correspondiente. Único punto de montaje. */
@@ -14,6 +15,7 @@ export function DrawerHost() {
   const canPositions = useCan('positions:write')
   const canDepartments = useCan('departments:write')
   const canJobTitles = useCan('job-titles:write')
+  const canUsers = useCan('users:write')
 
   // Los formularios solo se abren con permiso de escritura; la API lo exige de todos modos.
   switch (drawer) {
@@ -29,6 +31,8 @@ export function DrawerHost() {
       return canDepartments ? <DepartmentFormDrawer key={id ?? 'new'} id={id} /> : null
     case 'job-title-form':
       return canJobTitles ? <JobTitleFormDrawer key={id ?? 'new'} id={id} /> : null
+    case 'user':
+      return canUsers && id ? <UserDrawer key={id} id={id} onClose={close} /> : null
     default:
       return null
   }

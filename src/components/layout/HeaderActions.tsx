@@ -2,6 +2,7 @@ import { Bell, CheckCircle2, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { config } from '@/config'
 import { useAuthStore } from '@/features/auth/store'
 import { useAttention } from '@/features/today/useAttention'
 import { cn } from '@/lib/utils'
@@ -105,6 +106,7 @@ function ProfileMenu() {
           <p className={cn('text-muted-foreground num mt-2 text-xs')}>
             {user?.permissions.length ?? 0} {user?.permissions.length === 1 ? 'permiso' : 'permisos'}
           </p>
+          <p className="text-muted-foreground mt-1 text-xs">API: {config.apiTarget === 'local' ? 'local' : 'producción'}</p>
         </div>
         <Button variant="ghost" className="mt-1 w-full justify-start" onClick={logout}>
           <LogOut aria-hidden /> Cerrar sesión

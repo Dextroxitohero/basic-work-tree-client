@@ -111,7 +111,7 @@ export function EmployeesView() {
           <Search aria-hidden className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input
             type="search"
-            aria-label="Buscar empleados"
+            aria-label="Buscar empleados" maxLength={100}
             placeholder="Buscar por nombre o email"
             value={search}
             onChange={(e) => url.patch({ q: e.target.value }, { replace: true })}

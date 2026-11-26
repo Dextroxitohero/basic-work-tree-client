@@ -8,6 +8,7 @@ export type DrawerName =
   | 'department'
   | 'department-form'
   | 'job-title-form'
+  | 'user'
 
 /** Abrir y cerrar drawers cambiando la URL. `id` ausente en un formulario = alta. */
 export function useDrawer() {

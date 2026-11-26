@@ -11,21 +11,25 @@ export class ApiRequestError extends Error {
   readonly status: number
   readonly code: string
   readonly details: unknown
+  /** Segundos que indica `Retry-After` en un 429. */
+  readonly retryAfter: number | undefined
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(status: number, code: string, message: string, details?: unknown, retryAfter?: number) {
     super(message)
     this.name = 'ApiRequestError'
     this.status = status
     this.code = code
     this.details = details
+    this.retryAfter = retryAfter
   }
 
-  static fromBody(status: number, body: Partial<ApiError> | undefined): ApiRequestError {
+  static fromBody(status: number, body: Partial<ApiError> | undefined, retryAfter?: number): ApiRequestError {
     return new ApiRequestError(
       status,
       body?.error ?? 'http_error',
       body?.message ?? 'Error inesperado',
       body?.details,
+      retryAfter,
     )
   }
 

@@ -18,6 +18,23 @@ export interface Page<T> {
 
 export type SortOrder = 'asc' | 'desc'
 
+export type Permission =
+  | 'employees:read'
+  | 'employees:write'
+  | 'positions:write'
+  | 'job-titles:write'
+  | 'departments:write'
+  | 'users:write'
+
+export const ALL_PERMISSIONS: readonly Permission[] = [
+  'employees:read',
+  'employees:write',
+  'positions:write',
+  'job-titles:write',
+  'departments:write',
+  'users:write',
+]
+
 // ---- Puestos (catálogo) ----
 export interface JobTitle {
   id: UUID

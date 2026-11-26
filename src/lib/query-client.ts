@@ -5,8 +5,9 @@ import { notifyApiError } from '@/lib/notify'
 /** Errores que ya tienen tratamiento propio en otro sitio, y no necesitan toast. */
 function isHandledElsewhere(error: unknown): boolean {
   if (!(error instanceof ApiRequestError)) return false
-  // 401: el interceptor cierra sesión. 409/422: se muestran en el campo del formulario.
-  return error.status === 401 || error.status === 409 || error.status === 422
+  // 401: el interceptor cierra sesión o el formulario muestra las credenciales. 409/422: van al campo.
+  // 429: solo ocurre en login y registro, que lo muestran con la cuenta atrás.
+  return error.status === 401 || error.status === 409 || error.status === 422 || error.status === 429
 }
 
 function onError(error: unknown) {

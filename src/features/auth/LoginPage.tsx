@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, type FieldPath } from 'react-hook-form'
 import { Navigate } from 'react-router'
 import { z } from 'zod'
 import { login, signup, type AuthSession } from '@/api/auth'
 import { ApiRequestError } from '@/api/errors'
+import { PasswordInput } from '@/components/PasswordInput'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,6 +34,14 @@ export function LoginPage() {
   const setSession = useAuthStore((s) => s.setSession)
   const [mode, setMode] = useState<Mode>('login')
   const [formError, setFormError] = useState<string | null>(null)
+  // 429: segundos que faltan para poder reintentar (cabecera Retry-After).
+  const [retry, setRetry] = useState(0)
+  const blocked = retry > 0
+  useEffect(() => {
+    if (!blocked) return
+    const id = setInterval(() => setRetry((r) => Math.max(0, r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [blocked])
 
   const form = useForm<Values>({
     resolver: zodResolver(mode === 'login' ? loginSchema : signupSchema) as never,
@@ -50,8 +59,11 @@ export function LoginPage() {
       notify.success(mode === 'login' ? 'Sesión iniciada' : 'Cuenta creada', session.user.email)
     },
     onError: (error) => {
-      // Los 401/409/422 se muestran en el formulario; el resto lo cubre el toast global.
-      if (error.code === 'invalid_credentials') setFormError('Email o contraseña incorrectos')
+      // Los 401/409/422/429 se muestran en el formulario; el resto lo cubre el toast global.
+      if (error.status === 429) {
+        setRetry(error.retryAfter ?? 60)
+        setFormError(error.message)
+      } else if (error.code === 'invalid_credentials') setFormError('Email o contraseña incorrectos')
       else if (error.code === 'user_email_exists')
         form.setError('email', { message: 'Ya existe una cuenta con este email' })
       else if (error.status === 422)
@@ -130,9 +142,10 @@ export function LoginPage() {
               />
             </Field>
             <Field id="password" label="Contraseña" error={errors.password?.message}>
-              <Input
+              <PasswordInput
+                // Al cambiar entre acceso y registro la contraseña vuelve a empezar oculta.
+                key={mode}
                 id="password"
-                type="password"
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
                 aria-invalid={!!errors.password}
                 aria-describedby={errors.password ? 'password-error' : undefined}
@@ -146,8 +159,8 @@ export function LoginPage() {
               </p>
             )}
 
-            <Button type="submit" size="lg" disabled={isSubmitting || mutation.isPending} className="mt-1">
-              {mutation.isPending ? 'Un momento…' : isLogin ? 'Entrar' : 'Crear cuenta'}
+            <Button type="submit" size="lg" disabled={isSubmitting || mutation.isPending || blocked} className="mt-1">
+              {mutation.isPending ? 'Un momento…' : blocked ? `Reintenta en ${formatWait(retry)}` : isLogin ? 'Entrar' : 'Crear cuenta'}
             </Button>
           </form>
         </div>
@@ -169,6 +182,13 @@ export function LoginPage() {
       </div>
     </main>
   )
+}
+
+function formatWait(seconds: number): string {
+  if (seconds < 60) return `${seconds} s`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return s === 0 ? `${m} min` : `${m} min ${s} s`
 }
 
 function Field({

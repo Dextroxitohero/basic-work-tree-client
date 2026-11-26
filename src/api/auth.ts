@@ -1,12 +1,12 @@
 import { http } from './client'
-import type { UUID } from './types'
+import type { Permission, UUID } from './types'
 
 export interface AuthUser {
   id: UUID
   email: string
   full_name: string | null
   is_active: boolean
-  permissions: string[]
+  permissions: Permission[]
 }
 
 export interface AuthSession {

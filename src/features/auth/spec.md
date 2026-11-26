@@ -10,6 +10,7 @@ Endpoints verificados en la API de Railway (`/auth/signup`, `/auth/login`, `/aut
 |---|---|
 | `LoginPage.tsx` | Pantalla `/login`: pestañas «Iniciar sesión» y «Registrarme», formulario, panel ilustrado |
 | `OrgArt.tsx` | `OrgMark` (marca) y `OrgTreeArt` (ilustración con datos sintéticos) |
+| `../../components/PasswordInput.tsx` | Campo de contraseña con botón para mostrarla u ocultarla (`aria-pressed`, accesible con teclado). Empieza oculta y se reinicia al cambiar entre acceso y registro |
 | `store.ts` | `useAuthStore`, `useCan`, tipo `Permission` |
 | `ProtectedRoute.tsx` | Redirige a `/login` si no hay token |
 | `../../api/auth.ts` | `login`, `signup`, `fetchMe` |
@@ -53,11 +54,24 @@ Persistencia en `sessionStorage` (no sobrevive al cerrar la pestaña). Al hidrat
 
 | Error | Tratamiento |
 |---|---|
-| `invalid_credentials` (401) | Mensaje en el formulario: «Email o contraseña incorrectos» |
+| `invalid_credentials` (401) | Mensaje en el formulario: «Email o contraseña incorrectos». **No cierra sesión** |
+| `invalid_token` (401) | Único error que cierra la sesión: limpia la caché y vuelve a `/login` |
 | `user_email_exists` (409) | Error en el campo `email` |
 | `account_disabled` (403) | Mensaje en el formulario |
+| `too_many_requests` (429) | Mensaje de la API y botón deshabilitado con cuenta atrás desde `Retry-After` («Reintenta en 3 s»); se rehabilita solo |
 | `validation_error` (422) | Se mapea a los campos por `loc` |
 | Otros | Toast global |
+
+El interceptor distingue por `error`, no solo por el código HTTP. Si varias peticiones fallan a la vez con el mismo token caducado, el cierre ocurre una sola vez; un token nuevo vuelve a poder cerrarse.
+
+## Límites de intentos (API)
+
+| Endpoint | Límite |
+|---|---|
+| Login | 5 contraseñas incorrectas por email en 15 min (después ese email queda bloqueado, incluso con la contraseña correcta); 30 intentos por minuto por IP |
+| Signup | 10 por hora por IP y 3 por hora por email |
+
+Un login correcto reinicia el contador de fallos de ese email.
 
 ## Permisos → UI
 
@@ -81,5 +95,6 @@ Persistencia en `sessionStorage` (no sobrevive al cerrar la pestaña). Al hidrat
 ## Pendiente
 
 - `<Can>` (componente envoltorio); hoy solo existe el hook `useCan`.
-- Vista de usuarios y cambio de permisos: módulo `users` (la API ya expone `/users`).
+- La API no tiene cambio ni recuperación de contraseña, ni refresh token, ni logout en el servidor: cerrar sesión es descartar el token.
+- Los salarios los ve cualquier usuario registrado (`employees:read`); ocultarlos en la UI es solo comodidad, no protección (decisión pendiente en la API).
 - Cierre de sesión por expiración mientras la pestaña sigue abierta (hoy solo al hidratar y ante un 401).

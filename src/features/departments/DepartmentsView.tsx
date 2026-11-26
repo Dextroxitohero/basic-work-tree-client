@@ -71,7 +71,7 @@ export function DepartmentsView() {
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center" role="search">
         <div className="relative col-span-2 sm:w-auto sm:min-w-60 sm:max-w-xs sm:flex-1">
           <Search aria-hidden className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-          <Input type="search" aria-label="Buscar departamentos" placeholder="Buscar por nombre" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+          <Input type="search" aria-label="Buscar departamentos" maxLength={100} placeholder="Buscar por nombre" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
         </div>
         <FilterSelect label="Ordenar por" items={SORT_ITEMS} value={sortValue} onChange={(v) => url.patch({ sort: v === 'name:asc' ? undefined : v })} className="col-span-2 w-full sm:ml-auto sm:w-48" />
       </div>

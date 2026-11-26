@@ -1,3 +1,4 @@
+import type { UserListParams } from './users'
 import type {
   DepartmentListParams,
   EmployeeListParams,
@@ -19,6 +20,10 @@ export const keys = {
     all: ['departments'] as const,
     list: (params: DepartmentListParams) => ['departments', 'list', params] as const,
     detail: (id: UUID) => ['departments', 'detail', id] as const,
+  },
+  users: {
+    all: ['users'] as const,
+    list: (params: UserListParams) => ['users', 'list', params] as const,
   },
   jobTitles: {
     all: ['job-titles'] as const,

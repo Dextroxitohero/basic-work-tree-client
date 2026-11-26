@@ -7,13 +7,14 @@ type TokenGetter = () => string | null | Promise<string | null>
 
 let getToken: TokenGetter = () => null
 let onUnauthorized: () => void = () => {}
-let unauthorizedHandled = false
+/** Último token que ya provocó un cierre de sesión: evita repetirlo si fallan varias peticiones a la vez. */
+let lastRejectedAuth: string | null = null
 
 /** El módulo de auth registra aquí cómo obtener el token y qué hacer ante un 401. */
 export function configureApiAuth(options: { getToken: TokenGetter; onUnauthorized: () => void }) {
   getToken = options.getToken
   onUnauthorized = options.onUnauthorized
-  unauthorizedHandled = false
+  lastRejectedAuth = null
 }
 
 export const http = axios.create({
@@ -34,15 +35,21 @@ http.interceptors.response.use(
     if (!(error instanceof AxiosError)) throw error
     if (!error.response) throw ApiRequestError.network()
 
+    const retryAfter = Number(error.response.headers['retry-after'])
     const apiError = ApiRequestError.fromBody(
       error.response.status,
       error.response.data as Partial<ApiError> | undefined,
+      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined,
     )
 
-    // Varias peticiones pueden fallar a la vez con 401: se cierra la sesión una sola vez.
-    if (apiError.status === 401 && !unauthorizedHandled) {
-      unauthorizedHandled = true
-      onUnauthorized()
+    // Solo `invalid_token` cierra la sesión. Un 401 `invalid_credentials` del login se muestra en
+    // el formulario. Si varias peticiones fallan a la vez con el mismo token, se cierra una vez.
+    if (apiError.status === 401 && apiError.code === 'invalid_token') {
+      const sent = String(error.config?.headers?.Authorization ?? '')
+      if (sent !== lastRejectedAuth) {
+        lastRejectedAuth = sent
+        onUnauthorized()
+      }
     }
     throw apiError
   },

@@ -1,29 +1,47 @@
 # Módulo `users`
 
-Gestión de usuarios y permisos para administradores. **Pendiente de construir**; la API ya expone los endpoints.
+Administración de usuarios y permisos. Solo para quien tiene `users:write`.
 
-## Archivos previstos
+## Archivos
 
 | Archivo | Contenido |
 |---|---|
-| `UsersView.tsx` | Vista `?view=users`, visible solo con `users:write`: búsqueda, filtro activos/inactivos, lista |
-| `UserDrawer.tsx` | Drawer `user`: datos y edición de permisos y estado |
-| `hooks.ts` | `useUserList` (infinite query), `useUpdateUser` |
-| `../../api/users.ts` | `listUsers`, `updateUser` |
+| `UsersView.tsx` | Vista `?view=users`: búsqueda, filtro de estado, orden, tabla, «cargar más», estados |
+| `UserDrawer.tsx` | Drawer `user`: cuenta activa y permisos (checkboxes) |
+| `hooks.ts` | `useUserList` (infinite), `useUpdateUser` |
+| `../../api/users.ts` | `listUsers`, `updateUser`, `UserListParams`, `UserUpdate` |
 
-## Endpoints (verificados en Railway)
+## Endpoints
 
 | Método | Ruta | Entrada | Salida | Permiso |
 |---|---|---|---|---|
-| GET | `/users` | `q`, `is_active`, `sort` (`email`, `created_at`), `order`, `after` | `Page<AuthUser>` | `users:write` |
-| PATCH | `/users/{id}` | `{permissions?, is_active?}` | `AuthUser` | `users:write` |
+| GET | `/users` | `q` (email o nombre), `is_active`, `sort` (`email`, `created_at`), `order`, `after` | `Page<AuthUser>` | `users:write` |
+| PATCH | `/users/{id}` | `{permissions?, is_active?}` (ninguno acepta `null`) | `AuthUser` | `users:write` |
 
-`permissions` acepta: `employees:read`, `employees:write`, `positions:write`, `job-titles:write`, `departments:write`, `users:write`.
+No existe `GET /users/{id}`.
 
-## Reglas
+## Comportamiento
 
-- Quien se registra empieza con solo `employees:read`; un administrador amplía permisos aquí.
-- La entrada «Usuarios» del sidebar solo aparece con `users:write`.
-- El cliente no debe permitir que un administrador se quite a sí mismo `users:write` ni se desactive; la API además protege que siempre quede un admin activo.
-- Un cambio de permisos se refleja en el afectado en su siguiente consulta a `/auth/me` (60 s de caché en el shell).
-- Invalidación: `users.all` tras editar (key pendiente en `api/keys.ts`).
+- La entrada «Usuarios» del menú solo aparece con `users:write`. Con `?view=users` sin el permiso se muestra una pantalla explicativa; el drawer tampoco se monta.
+- **Estado:** `Todos` (defecto, omite `is_active`), `Activos`, `Desactivados`.
+- **Drawer:** como no hay `GET /users/{id}`, el usuario se busca en la lista y se cargan páginas hasta encontrarlo (sirve también para enlaces directos).
+- **PATCH:** envía solo lo que cambió; los permisos van ordenados. La API ignora duplicados.
+- **Tu propia cuenta:** el checkbox `users:write` y el interruptor de cuenta activa están bloqueados.
+- Tras editar la propia cuenta se vuelve a pedir `/auth/me`.
+
+## Permisos que se pueden conceder
+
+`employees:read`, `employees:write`, `positions:write`, `job-titles:write`, `departments:write`, `users:write`. Cada uno tiene su texto explicativo en el drawer.
+
+## Errores
+
+| Error | En la UI |
+|---|---|
+| 409 `last_admin_required` | Aviso «Debe quedar un administrador» (toast propio; el drawer sigue abierto) |
+| 404 `user_not_found` | Aviso y se cierra el drawer |
+| 422 `validation_error` | Toast |
+
+## Notas
+
+- Un cambio de permisos o de estado es inmediato para el afectado: la API consulta al usuario en cada petición.
+- La API ya pone límites: no se puede dejar el sistema sin un administrador activo.

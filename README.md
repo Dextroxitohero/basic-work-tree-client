@@ -8,11 +8,21 @@ React 19 · Vite · TypeScript · Tailwind v4 · shadcn/ui · TanStack Query · 
 
 ```bash
 npm install
-cp .env.example .env.local   # por defecto habla con la API de Railway
 npm run dev
 ```
 
-En desarrollo el navegador llama a `/api/...` en el mismo origen y el proxy de Vite lo reenvía a `API_PROXY_TARGET` (evita CORS). Para una API local, pon `API_PROXY_TARGET=http://localhost:8000`.
+### ¿A qué API habla?
+
+Una bandera, `VITE_API_TARGET`, elige entre las dos URLs de `.env`:
+
+| Valor | API |
+|---|---|
+| `production` (por defecto) | `https://basic-work-tree-api-production.up.railway.app` |
+| `local` | `http://localhost:8010` |
+
+Para cambiarla en tu máquina, crea `.env.local` (no se versiona) con `VITE_API_TARGET=local`. En desarrollo el navegador llama a `/api/...` en el mismo origen y el proxy de Vite lo reenvía a la API elegida (evita CORS). En el build, el cliente llama directo a la URL elegida, y esa API debe permitir su origen en `CORS_ORIGINS`.
+
+**Railway (front):** no necesita variables; el build usa `.env`. Para forzar otra API, define `VITE_API_TARGET` en el servicio y redespliega (se aplica al compilar).
 
 ## Documentación
 

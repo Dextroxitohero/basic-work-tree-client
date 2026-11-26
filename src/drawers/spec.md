@@ -21,6 +21,7 @@ Los drawers laterales son la forma de abrir detalle y formularios sin crear ruta
 | `department` | `departments/DepartmentDrawer` | Hecho |
 | `department-form` | `departments/DepartmentFormDrawer` | Hecho |
 | `job-title-form` | `job-titles/JobTitleFormDrawer` | Hecho |
+| `user` | `users/UserDrawer` (solo con `users:write`) | Hecho |
 
 ## Parámetros de URL
 

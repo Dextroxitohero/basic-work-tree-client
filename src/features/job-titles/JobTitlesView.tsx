@@ -70,7 +70,7 @@ export function JobTitlesView() {
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center" role="search">
         <div className="relative col-span-2 sm:w-auto sm:min-w-60 sm:max-w-xs sm:flex-1">
           <Search aria-hidden className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-          <Input type="search" aria-label="Buscar puestos" placeholder="Buscar por nombre" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+          <Input type="search" aria-label="Buscar puestos" maxLength={100} placeholder="Buscar por nombre" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
         </div>
         <FilterSelect label="Estado" items={STATUS_ITEMS} value={status} onChange={(v) => url.patch({ status: v === 'active' ? undefined : v })} className="col-span-2 w-full sm:w-40" />
       </div>

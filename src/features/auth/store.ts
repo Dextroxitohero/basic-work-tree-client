@@ -1,14 +1,9 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { AuthSession, AuthUser } from '@/api/auth'
+import type { Permission } from '@/api/types'
 
-export type Permission =
-  | 'employees:read'
-  | 'employees:write'
-  | 'positions:write'
-  | 'job-titles:write'
-  | 'departments:write'
-  | 'users:write'
+export type { Permission } from '@/api/types'
 
 interface AuthState {
   token: string | null

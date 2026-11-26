@@ -11,6 +11,7 @@ Capa de red. Funciones puras sin React: reciben parámetros, devuelven datos tip
 | `types.ts` | Tipos de la API: entidades, bodies, `Page<T>`, parámetros de lista |
 | `keys.ts` | Query keys de TanStack Query |
 | `auth.ts` | `login`, `signup`, `fetchMe`, `AuthUser`, `AuthSession` |
+| `users.ts` | `listUsers`, `updateUser` |
 | `employees.ts` | Empleados y sus puestos (`listPositions`, `getCurrentPosition`, `assignPosition`) |
 | `departments.ts` | Departamentos |
 | `job-titles.ts` | Catálogo de puestos |
@@ -19,11 +20,12 @@ Capa de red. Funciones puras sin React: reciben parámetros, devuelven datos tip
 
 | Aspecto | Comportamiento |
 |---|---|
-| `baseURL` | `config.apiBaseUrl` (`VITE_API_URL` + `/api/v1`) |
+| `baseURL` | `config.apiBaseUrl`: `/api/v1` en desarrollo (proxy de Vite); URL de la API elegida por `VITE_API_TARGET` + `/api/v1` en el build |
 | `timeout` | 15 s |
 | Request | Añade `Authorization: Bearer` con el token que registra `configureApiAuth` |
 | Response (error) | Siempre lanza `ApiRequestError`. Sin respuesta → `network_error` |
-| 401 | Llama a `onUnauthorized` **una sola vez** aunque fallen varias peticiones a la vez |
+| 401 `invalid_token` | Llama a `onUnauthorized` **una sola vez** por token, aunque fallen varias peticiones a la vez. Los demás 401 (`invalid_credentials`) no cierran sesión |
+| 429 | `ApiRequestError.retryAfter` con los segundos de la cabecera `Retry-After` |
 | Sin lógica de negocio | Ni toasts ni navegación: eso lo decide quien llama |
 
 `configureApiAuth({ getToken, onUnauthorized })` se llama antes del primer render (en `App.tsx`) para desacoplar el cliente del store de sesión.
@@ -48,6 +50,5 @@ Capa de red. Funciones puras sin React: reciben parámetros, devuelven datos tip
 
 ## Pendiente
 
-- `users.ts`: `listUsers` y `updateUser` (módulo `users`).
 - `fetchEmployeeReports` (`GET /employees/{id}/reports`).
 - Los hooks de mutación viven en cada feature, no aquí.

@@ -6,6 +6,7 @@ import {
   Network,
   Search,
   ShieldAlert,
+  UserCog,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -20,6 +21,7 @@ import { EmployeesView } from '@/features/employees/EmployeesView'
 import { JobTitlesView } from '@/features/job-titles/JobTitlesView'
 import { OrgChartView } from '@/features/org-chart/OrgChartView'
 import { TodayView } from '@/features/today/TodayView'
+import { UsersView } from '@/features/users/UsersView'
 import { useAttention } from '@/features/today/useAttention'
 import { useUrlState } from '@/hooks/useUrlState'
 import { cn } from '@/lib/utils'
@@ -33,6 +35,7 @@ const NAV: { view: View; label: string; icon: LucideIcon }[] = [
   { view: 'org-chart', label: 'Organigrama', icon: Network },
   { view: 'departments', label: 'Departamentos', icon: Building2 },
   { view: 'job-titles', label: 'Puestos', icon: Briefcase },
+  { view: 'users', label: 'Usuarios', icon: UserCog },
 ]
 
 function useView(): View {
@@ -53,14 +56,17 @@ export function Workspace() {
   const view = useView()
   const goTo = useGoToView()
   const canRead = useCan('employees:read')
+  const canUsers = useCan('users:write')
   const attention = useAttention()
   useRefreshedUser()
+  // «Usuarios» solo existe para quien puede administrarlos.
+  const nav = NAV.filter((n) => n.view !== 'users' || canUsers)
 
   return (
     // Marco degradado (body) + app flotante. En móvil la app ocupa toda la pantalla.
     <div className="md:p-5 lg:p-8">
       <div className="bg-background text-foreground relative flex min-h-svh flex-col overflow-clip md:min-h-[calc(100svh-2.5rem)] md:flex-row md:rounded-[1.75rem] md:shadow-[0_30px_80px_-20px_rgb(8_4_40/0.6)] lg:min-h-[calc(100svh-4rem)]">
-        <MobileHeader view={view} onNavigate={goTo} />
+        <MobileHeader view={view} nav={nav} onNavigate={goTo} />
 
         <aside className="text-sidebar-foreground sticky top-0 hidden h-svh max-h-[calc(100svh-2.5rem)] w-60 shrink-0 flex-col self-start px-4 py-5 md:flex lg:max-h-[calc(100svh-4rem)]">
           <div className="flex items-center gap-2.5 px-2 pb-6">
@@ -69,7 +75,7 @@ export function Workspace() {
           </div>
           <p className="text-muted-foreground px-3 pb-2 text-xs font-medium">Menú</p>
           <nav aria-label="Vistas" className="grid gap-1">
-            {NAV.map(({ view: v, label, icon: Icon }) => {
+            {nav.map(({ view: v, label, icon: Icon }) => {
               const active = v === view
               return (
                 <button
@@ -114,6 +120,16 @@ export function Workspace() {
               <OrgChartView />
             ) : view === 'departments' ? (
               <DepartmentsView />
+            ) : view === 'users' ? (
+              canUsers ? (
+                <UsersView />
+              ) : (
+                <StateBlock
+                  icon={<ShieldAlert aria-hidden className="size-5" />}
+                  title="No tienes permiso para administrar usuarios"
+                  text="Pide a un administrador el permiso users:write."
+                />
+              )
             ) : (
               <JobTitlesView />
             )}
@@ -160,7 +176,7 @@ function TopBar() {
           type="search"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          aria-label="Buscar personas"
+          aria-label="Buscar personas" maxLength={100}
           placeholder="Buscar personas"
           className="bg-card placeholder:text-muted-foreground focus-visible:ring-ring/50 h-11 w-full rounded-full border pr-16 pl-11 text-sm outline-none focus-visible:ring-3"
         />
@@ -173,7 +189,7 @@ function TopBar() {
   )
 }
 
-function MobileHeader({ view, onNavigate }: { view: View; onNavigate: (v: View) => void }) {
+function MobileHeader({ view, nav, onNavigate }: { view: View; nav: typeof NAV; onNavigate: (v: View) => void }) {
   return (
     <header className="bg-background sticky top-0 z-30 border-b md:hidden">
       <div className="flex items-center justify-between px-4 pt-3">
@@ -184,7 +200,7 @@ function MobileHeader({ view, onNavigate }: { view: View; onNavigate: (v: View) 
         <HeaderActions />
       </div>
       <nav aria-label="Vistas" className="flex gap-1 overflow-x-auto px-3 py-2 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]">
-        {NAV.map(({ view: v, label, icon: Icon }) => (
+        {nav.map(({ view: v, label, icon: Icon }) => (
           <button
             key={v}
             type="button"

@@ -27,6 +27,7 @@ El workspace: marco degradado, sidebar, barra superior, navegación entre vistas
 | `org-chart` | `OrgChartView` | Hecho |
 | `departments` | `DepartmentsView` | Hecho |
 | `job-titles` | `JobTitlesView` | Hecho |
+| `users` | `UsersView` (solo con `users:write`) | Hecho |
 
 Cambiar de vista descarta filtros y drawer de la anterior (`q`, `status`, `dept`, `sort`, `drawer`, `id`, `tab`).
 

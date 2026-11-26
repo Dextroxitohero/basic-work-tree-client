@@ -15,7 +15,7 @@ Contexto de producto y diseño: `PRODUCT.md` (usuarios, propósito, principios) 
 | `auth` | `src/features/auth/` | Signup, login, sesión, permisos | Hecho; endpoints verificados en Railway |
 | `employees` | `src/features/employees/` | Tabla, ficha, alta, edición, baja, reactivar, asignar puesto | Hecho |
 | `departments` | `src/features/departments/` | Vista, ficha y formulario de departamentos | Hecho |
-| `users` | `src/features/users/` | Gestión de usuarios y permisos (admin) | Pendiente; la API ya expone `/users` |
+| `users` | `src/features/users/` | Gestión de usuarios y permisos (admin) | Hecho |
 | `job-titles` | `src/features/job-titles/` | Catálogo de puestos | Hecho |
 | `org-chart` | `src/features/org-chart/` | Organigrama | Hecho |
 | `drawers` | `src/drawers/` | `DrawerHost`, `useDrawer` y estado de drawers en la URL | Hecho |
@@ -44,21 +44,24 @@ Contexto de producto y diseño: `PRODUCT.md` (usuarios, propósito, principios) 
 
 | Aspecto | Valor |
 |---|---|
-| Base URL | `VITE_API_URL` + `/api/v1`. Vacío en desarrollo |
-| Desarrollo | Proxy de Vite: `/api` → `API_PROXY_TARGET` (sin CORS) |
+| Bandera | `VITE_API_TARGET` = `local` \| `production` (por defecto `production`) elige la API |
+| Base URL | Desarrollo: `/api/v1` (relativa). Build: URL elegida + `/api/v1` |
+| Desarrollo | Proxy de Vite: `/api` → la URL de la API elegida (sin CORS) |
 | API desplegada | `https://basic-work-tree-api-production.up.railway.app` (Railway) |
 | CORS en Railway | Activo, pero **rechaza `http://localhost:5173`** (preflight 400); por eso en desarrollo se usa el proxy de Vite |
-| Producción del front | Su origen debe añadirse al CORS de la API; entonces `VITE_API_URL` apunta a la API |
+| Producción del front | Su origen debe estar en `CORS_ORIGINS` de la API elegida |
 | Formato | JSON; IDs `UUID`; fechas `YYYY-MM-DD`; timestamps ISO 8601 |
 | Auth | `Authorization: Bearer <jwt>` en todas las peticiones salvo login y signup |
 | Healthcheck | `GET /health` (fuera de `/api/v1`) |
 
 ```env
-VITE_API_URL=                          # vacío en dev
-API_PROXY_TARGET=https://basic-work-tree-api-production.up.railway.app   # solo dev
+# .env (versionado, sin secretos)
+VITE_API_TARGET=production          # bandera: local | production
+VITE_API_URL_LOCAL=http://localhost:8000
+VITE_API_URL_PRODUCTION=https://basic-work-tree-api-production.up.railway.app
 ```
 
-Por defecto el cliente habla con **Railway** a través del proxy de Vite. Para una API local: `API_PROXY_TARGET=http://localhost:8000` en `.env.local` (no se versiona).
+Por defecto el cliente habla con **Railway**. Para tu máquina, `.env.local` (no se versiona) con `VITE_API_TARGET=local`. Una variable del sistema o de Railway tiene prioridad sobre los `.env`. El front desplegado en Railway no necesita variables: el build usa `.env`. Un build sin la URL de la API elegida falla al compilar, en vez de desplegar un cliente que llamaría a su propio dominio. El menú de perfil muestra a qué API apunta la sesión.
 
 ## Autenticación (resumen)
 
@@ -71,7 +74,7 @@ Auth **propia en la API** (sin Auth0): `POST /auth/signup`, `POST /auth/login`, 
 | `positions:write` | Asignar puesto |
 | `job-titles:write` | Crear/editar catálogo de puestos |
 | `departments:write` | Crear/editar departamentos |
-| `users:write` | Ver usuarios y cambiar sus permisos o activarlos/desactivarlos |
+| `users:write` | Pantalla de usuarios: cambiar permisos y activar o desactivar cuentas |
 
 La UI oculta acciones según permisos (`useCan`); la autorización real la hace siempre la API.
 
@@ -84,7 +87,7 @@ Todo bajo `/api/v1`. Contrato verificado contra el `/openapi.json` de Railway (2
 | POST | `/auth/signup` | `SignupBody` | 201 `AuthSession` | público |
 | POST | `/auth/login` | `LoginBody` | `AuthSession` | público |
 | GET | `/auth/me` | — | `AuthUser` | token |
-| GET | `/users` | `q`, `is_active`, `sort`, `order`, `after` | `Page<AuthUser>` | `users:write` |
+| GET | `/users` | `q`, `is_active`, `sort` (`email`, `created_at`), `order`, `after` | `Page<AuthUser>` | `users:write` |
 | PATCH | `/users/{id}` | `{permissions?, is_active?}` | `AuthUser` | `users:write` |
 | GET | `/employees` | `q`, `is_active`, `department_id`, `manager_id`, `has_manager`, `job_title_id`, `sort`, `order`, `after` | `Page<Employee>` | `employees:read` |
 | POST | `/employees` | `EmployeeCreate` | 201 `Employee` | `employees:write` |
@@ -137,9 +140,11 @@ Todas las respuestas de error son `ApiError { error, message, details? }`. El cl
 | HTTP | `error` | Tratamiento |
 |---|---|---|
 | 401 | `invalid_credentials` | Mensaje en el formulario de login |
-| 401 | `invalid_token` | `logout()` y volver a `/login` |
+| 401 | `invalid_token` | `logout()` y volver a `/login` (único 401 que cierra sesión) |
 | 403 | `insufficient_permissions` | Toast; no cerrar sesión |
 | 403 | `account_disabled` | Mensaje en el formulario de login |
+| 409 | `last_admin_required` | Aviso: debe quedar un administrador activo |
+| 429 | `too_many_requests` | Botón deshabilitado con cuenta atrás desde `Retry-After` |
 | 404 | `employee_not_found`, `department_not_found`, `job_title_not_found` | Estado de error en el drawer o vista |
 | 404 | `no_active_position` | No es un error: significa «sin puesto actual» (`null`) |
 | 409 | `user_email_exists`, `email_already_exists` | Error en el campo `email` |
@@ -242,7 +247,7 @@ Accesibilidad: labels en formularios, errores con `role="alert"` y `aria-describ
 | 5 | Asignar puesto | Hecha |
 | 6 | Departamentos y puestos (vistas y formularios) | Hecha |
 | 7 | Organigrama | Hecha |
-| 8 | Gestión de usuarios (vista admin con `users:write`) | Pendiente |
+| 8 | Gestión de usuarios (vista admin con `users:write`) | Hecha |
 | 9 | Vista «Hoy» y rediseño sobre la referencia aportada | Hecha |
 | 10 | Pulido: tests, `DESIGN.md`, revisión de diseño independiente | Pendiente |
 
@@ -254,3 +259,6 @@ Accesibilidad: labels en formularios, errores con `role="alert"` y `aria-describ
 | Total de resultados | ¿Se devuelve `total` en la primera página o solo `next_cursor`? |
 | Divisa del salario | La API no la define; hoy se muestra el número sin símbolo |
 | Tema oscuro | Tokens definidos, sin interruptor ni verificación visual |
+| Salarios | La API los entrega a cualquier usuario registrado (`employees:read`); ocultarlos en la UI no protege nada |
+| Contraseñas | La API no tiene cambio ni recuperación de contraseña |
+| Tipos | Conviene generarlos desde `/openapi.json` (por ejemplo con `openapi-typescript`); hoy están escritos a mano y verificados contra él |

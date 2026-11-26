@@ -29,7 +29,7 @@ Todo toast pasa por `notify`: si se cambia de librería, solo se toca este archi
 | `staleTime` | 30 s |
 | `refetchOnWindowFocus` | desactivado |
 | `retry` | Solo si es `ApiRequestError` con status ≥ 500, máx. 2 |
-| `onError` global (query y mutation) | Toast, **excepto** 401 (cierra sesión), 409 y 422 (van al formulario) |
+| `onError` global (query y mutation) | Toast, **excepto** 401 (cierra sesión o lo muestra el login), 409 y 422 (van al formulario) y 429 (cuenta atrás del login) |
 
 ## Formato
 
