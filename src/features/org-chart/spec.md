@@ -1,14 +1,12 @@
 # Módulo `org-chart`
 
-Organigrama: la jerarquía de jefes y reportes. **Pendiente de construir.** Es el módulo que materializa el principio «la jerarquía manda» de `PRODUCT.md`.
+Organigrama: la jerarquía de jefes y reportes. Es el módulo que materializa el principio «la jerarquía manda» de `PRODUCT.md`.
 
-## Archivos previstos
+## Archivos
 
 | Archivo | Contenido |
 |---|---|
-| `OrgChartView.tsx` | Vista `?view=org-chart`: selector de raíz y árbol |
-| `TreeNode.tsx` | Nodo recursivo con colapso |
-| `hooks.ts` | `useRoots` (empleados sin jefe), `useEmployeeTree(id)` |
+| `OrgChartView.tsx` | Vista `?view=org-chart`: selector de raíz, `Tree` y `Node` recursivo con colapso (hecho) |
 
 ## Endpoints
 
@@ -23,7 +21,7 @@ Organigrama: la jerarquía de jefes y reportes. **Pendiente de construir.** Es e
 
 - **Raíz:** por defecto, el único empleado activo sin jefe. Si hay varios, un selector; la elegida va en la URL (`root`).
 - **Nodo:** avatar con tinte de departamento, nombre, puesto y número de reportes. Clic abre `?drawer=employee&id=`.
-- **Árbol:** componente recursivo con colapso por nodo; navegable con teclado (flechas para moverse, Enter para abrir la ficha).
+- **Árbol:** lista indentada con roles ARIA `tree`/`treeitem`; colapso por nodo (los dos primeros niveles abiertos). Cada nodo y su botón de colapso son botones nativos, navegables con Tab; falta la navegación con flechas.
 - **Bajas:** el árbol solo trae empleados activos; la baja ya reasigna a sus subordinados a «sin jefe», por lo que pueden aparecer como nuevas raíces.
 - Un árbol grande no se pagina: si crece, la API necesitaría `depth` (decisión futura).
 
@@ -35,6 +33,6 @@ Carga (skeleton del árbol), vacío («Aún no hay jerarquía»), error con rein
 
 Cualquier cambio de jefe (alta, edición, baja) invalida `employees.all`, que cubre el árbol (`keys.employees.tree`).
 
-## Pendiente de decisión
+## Pendiente
 
-Mover jefes arrastrando nodos. Queda fuera de la primera versión; los ciclos los decide la API (409 `circular_manager_reference`), así que no habría que duplicar esa lógica en el cliente.
+Navegación con flechas. Mover jefes arrastrando nodos (fuera de la primera versión). Los ciclos los decide la API (409 `circular_manager_reference`), así que no habría que duplicar esa lógica en el cliente.

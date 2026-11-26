@@ -75,14 +75,15 @@ export function LoginPage() {
   const isLogin = mode === 'login'
 
   return (
-    <main className="grid min-h-svh lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <main className="grid min-h-svh place-items-center p-3 sm:p-6 lg:p-10">
+      <div className="bg-background grid w-full max-w-5xl overflow-clip rounded-[1.75rem] shadow-[0_30px_80px_-20px_rgb(8_4_40/0.6)] lg:min-h-[40rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <section className="flex flex-col px-6 py-8 sm:px-12">
         <div className="flex items-center gap-2.5">
           <OrgMark className="size-7" />
           <span className="text-[15px] font-semibold tracking-tight">Work Tree</span>
         </div>
 
-        <div className="mx-auto mt-[min(14vh,7rem)] w-full max-w-sm pb-12">
+        <div className="mx-auto my-auto w-full max-w-sm py-10">
           <h1 className="text-2xl font-semibold tracking-tight">
             {isLogin ? 'Te damos la bienvenida' : 'Crea tu cuenta'}
           </h1>
@@ -152,8 +153,10 @@ export function LoginPage() {
         </div>
       </section>
 
-      <aside className="bg-primary text-primary-foreground hidden flex-col justify-between gap-10 p-12 lg:flex">
-        <OrgTreeArt aria-hidden className="mx-auto h-auto w-full max-w-2xl" />
+      <aside className="bg-primary text-primary-foreground m-3 hidden flex-col justify-between gap-10 rounded-[1.25rem] p-10 lg:flex">
+        <div className="grid flex-1 place-items-center">
+          <OrgTreeArt aria-hidden className="h-auto w-full max-w-md" />
+        </div>
         <div className="max-w-md">
           <p className="text-3xl leading-tight font-semibold tracking-tight">
             Tu equipo, sus puestos y sus jefes en un solo lugar.
@@ -163,6 +166,7 @@ export function LoginPage() {
           </p>
         </div>
       </aside>
+      </div>
     </main>
   )
 }

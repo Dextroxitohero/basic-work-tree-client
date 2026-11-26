@@ -14,9 +14,9 @@ Unresolved: org chart, departments, job-titles views still to build; Auth0 defer
 
 ## Direction contract
 
-THESIS: Un SaaS de RRHH ejecutado al nivel de Rippling/Personio: la persona es la unidad, el avatar y su departamento lo identifican de un vistazo. Rechaza el dashboard de tarjetas de métricas.
-OWN-WORLD: Fondo blanco azulado frío, sidebar un paso más oscuro, un único acento verde pino; avatares con iniciales teñidos por departamento; Geist con cifras tabulares; bordes de 1px, radios 8px, sombras suaves con desplazamiento.
-STORY: La persona de RRHH entra, ve a su gente, filtra, abre una ficha en un drawer y resuelve sin cambiar de página.
-FIRST VIEWPORT: Sidebar 240px a la izquierda; a la derecha título Empleados con contador, barra de búsqueda y filtros bajo el título, tabla densa a ancho completo con avatar, nombre y email, departamento, puesto, ingreso y estado. El botón primario «Nuevo empleado» llega con el drawer de alta (aplazado, no omitido). La jerarquía se lee en el drawer (pestaña Reportes) y en la vista Organigrama, pendiente de construir.
-FORM: Canon SaaS de administración, user's standing exit, seed key 1f02eb68.
+THESIS: Un panel de gestión de personas con tarjetas flotantes sobre un marco degradado índigo, basado en la referencia que el usuario aportó (pinned). Rechaza el dashboard de métricas inventadas: «Hoy» solo muestra datos que la API sostiene.
+OWN-WORLD: Marco índigo-violeta detrás de una app de esquinas muy redondeadas; superficie lavanda fría, tarjetas blancas, índigo profundo como acento y violeta solo en contadores; píldoras de estado con punto; Geist con cifras tabulares; sombras suaves con desplazamiento; sidebar sin fondo con píldora blanca activa.
+STORY: La persona de RRHH abre «Hoy», ve cuántas personas hay por departamento y qué requiere acción, y lo resuelve desde un drawer sin cambiar de página.
+FIRST VIEWPORT: Marco degradado; sidebar de 240 px con «Hoy» activo y contador violeta; barra superior con búsqueda en píldora (Ctrl K), campana y perfil; título «Hoy»; tarjeta de personas con barra segmentada a la izquierda y tarjeta índigo «Requiere atención» a la derecha; debajo, pulso de departamentos y lista de acciones.
+FORM: Panel de operación con tarjetas flotantes (referencia aportada por el usuario, pinned); decisión del usuario sobre el marco: sí, con degradado. Seed key 1f02eb68 previa; la referencia sustituye la salida estándar anterior.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

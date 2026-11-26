@@ -6,11 +6,10 @@ Departamentos y sus encargados.
 
 | Archivo | Contenido | Estado |
 |---|---|---|
-| `hooks.ts` | `useDepartments` (todos, recorre el cursor), `useDepartmentNames` (id → nombre) | Hecho |
-| `DepartmentsView.tsx` | Vista `?view=departments` | Pendiente |
-| `DepartmentDrawer.tsx` | Drawer `department`: datos, encargado, empleados | Pendiente |
-| `DepartmentFormDrawer.tsx` | Alta y edición | Pendiente |
-| `mutations.ts`, `schemas.ts` | Mutaciones y zod | Pendiente |
+| `hooks.ts` | `useDepartmentList` (infinite), `useDepartment`, `useDepartments` (todos), `useDepartmentNames`, `useCreateDepartment`, `useUpdateDepartment` | Hecho |
+| `DepartmentsView.tsx` | Vista `?view=departments`: búsqueda, orden, tabla, «cargar más», estados | Hecho |
+| `DepartmentDrawer.tsx` | Drawer `department`: encargado y empleados activos (paginados) | Hecho |
+| `DepartmentFormDrawer.tsx` | Drawer `department-form`: alta y edición | Hecho |
 
 ## Endpoints
 
@@ -48,6 +47,10 @@ En PATCH, `name` no acepta `null`.
 | El encargado está activo | 409 `inactive_manager` | Error en encargado |
 
 Invalidación: crear o editar → `departments.all`; si cambia el encargado, también `employees.all`.
+
+## Formulario
+
+Nombre y encargado opcional (`EmployeePicker`). El PATCH envía solo lo modificado; quitar el encargado envía `null`. Al crear o editar vuelve al drawer del departamento. Cerrar con cambios sin guardar pide confirmación. Los errores `department_name_exists`, `inactive_manager` y `employee_not_found` van a su campo.
 
 ## Diseño
 

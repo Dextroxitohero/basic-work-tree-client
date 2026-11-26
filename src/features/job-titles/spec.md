@@ -1,15 +1,14 @@
 # Módulo `job-titles`
 
-Catálogo de puestos de la empresa. **Pendiente de construir**; solo existen las funciones de red (`src/api/job-titles.ts`).
+Catálogo de puestos de la empresa.
 
-## Archivos previstos
+## Archivos
 
-| Archivo | Contenido |
-|---|---|
-| `JobTitlesView.tsx` | Vista `?view=job-titles`: búsqueda, filtro activos/inactivos, lista |
-| `JobTitleFormDrawer.tsx` | Drawer `job-title-form`: alta, edición y desactivar |
-| `hooks.ts` | `useJobTitles(params)` (query simple, el catálogo no se pagina) |
-| `mutations.ts`, `schemas.ts` | Mutaciones y zod |
+| Archivo | Contenido | Estado |
+|---|---|---|
+| `JobTitlesView.tsx` | Vista `?view=job-titles`: búsqueda, filtro activos/inactivos/todos, tabla | Hecho |
+| `JobTitleFormDrawer.tsx` | Drawer `job-title-form`: alta, edición y activar/desactivar | Hecho |
+| `hooks.ts` | `useJobTitles(params)` (sin paginar), `useCreateJobTitle`, `useUpdateJobTitle` | Hecho |
 
 ## Endpoints
 

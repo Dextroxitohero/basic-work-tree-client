@@ -8,6 +8,8 @@ Piezas comunes sin lógica de negocio. Cubre `src/lib/`, `src/stores/` y `src/ho
 |---|---|
 | `lib/notify.ts` | Wrapper de Sileo: `notify.success/error/info/warning/promise` y `notifyApiError` |
 | `lib/query-client.ts` | `QueryClient` con `onError` global y política de reintentos |
+| `lib/form-errors.ts` | `applyApiError`: lleva un error de la API al campo del formulario; solo toastea 409/422 sin campo (el resto ya lo hace el toast global) |
+| `components/StatusPill.tsx` | Estado en píldora con punto (`ok`, `warn`, `risk`, `neutral`) |
 | `lib/format.ts` | `fullName`, `initials`, `formatDate` (es), `formatSalary` |
 | `lib/dept-color.ts` | `hueFor`, `tintFor`: tono estable por departamento |
 | `lib/utils.ts` | `cn()` de shadcn |

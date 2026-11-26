@@ -11,13 +11,14 @@ Contexto de producto y diseño: `PRODUCT.md` (usuarios, propósito, principios) 
 | Módulo | Carpeta | Responsabilidad | Estado |
 |---|---|---|---|
 | `api` | `src/api/` | Cliente HTTP, tipos, errores, query keys, funciones de red | Hecho |
+| `today` | `src/features/today/` | Vista «Hoy»: resumen con datos reales y pendientes | Hecho |
 | `auth` | `src/features/auth/` | Signup, login, sesión, permisos | Hecho; endpoints verificados en Railway |
-| `employees` | `src/features/employees/` | Tabla de empleados y drawer de ficha | Lista y ficha (solo lectura) hechas; formularios pendientes |
-| `departments` | `src/features/departments/` | Departamentos | Solo hook de lectura; vista y formularios pendientes |
+| `employees` | `src/features/employees/` | Tabla, ficha, alta, edición, baja, reactivar, asignar puesto | Hecho |
+| `departments` | `src/features/departments/` | Vista, ficha y formulario de departamentos | Hecho |
 | `users` | `src/features/users/` | Gestión de usuarios y permisos (admin) | Pendiente; la API ya expone `/users` |
-| `job-titles` | `src/features/job-titles/` | Catálogo de puestos | Pendiente |
-| `org-chart` | `src/features/org-chart/` | Organigrama | Pendiente |
-| `drawers` | `src/drawers/` | `DrawerHost` y estado de drawers en la URL | Hecho para `employee` |
+| `job-titles` | `src/features/job-titles/` | Catálogo de puestos | Hecho |
+| `org-chart` | `src/features/org-chart/` | Organigrama | Hecho |
+| `drawers` | `src/drawers/` | `DrawerHost`, `useDrawer` y estado de drawers en la URL | Hecho |
 | `layout` | `src/components/layout/` | Workspace: sidebar, vistas, shell responsive | Hecho |
 | `lib` | `src/lib/`, `src/stores/`, `src/hooks/` | Notificaciones, formato, color, query client, stores de UI | Hecho |
 
@@ -184,7 +185,8 @@ Dos rutas: `/login` (login y registro) y `/` (workspace). Todo lo demás se abre
 
 | `?view=` | Vista | Módulo |
 |---|---|---|
-| `employees` (defecto) | Tabla con búsqueda, filtros, orden y «cargar más» | `employees` |
+| `today` (defecto) | Resumen, pulso de departamentos y pendientes | `today` |
+| `employees` | Tabla con búsqueda, filtros, orden y «cargar más» | `employees` |
 | `org-chart` | Árbol de la jerarquía | `org-chart` |
 | `departments` | Lista de departamentos | `departments` |
 | `job-titles` | Catálogo de puestos | `job-titles` |
@@ -195,7 +197,7 @@ Vista, filtros, búsqueda, orden, drawer abierto y pestaña viven en la **URL**,
 Cada tabla y drawer tiene carga (skeleton), vacío (con CTA si hay permiso), error (con «reintentar») y sin permiso.
 
 ### Diseño
-Dirección: SaaS de administración estándar, al nivel de Rippling/Personio (salida estándar elegida por el usuario). Tokens en `src/index.css`: base azulada fría, acento verde pino, Geist con cifras tabulares, radios 8 px, sombras suaves. Detalle en `.impeccable/surfaces/`.
+Dirección: basada en una referencia aportada por el usuario (panel con marco degradado índigo, app flotante de esquinas redondeadas, tarjetas blancas, píldoras de estado, campana de pendientes). Se tomó el lenguaje visual; no la marca ni sus indicadores. Tokens en `src/index.css`: superficie lavanda, índigo profundo, violeta para contadores, tonos `ok`/`warn`/`risk`, Geist con cifras tabulares, radio base 12 px, sombras suaves. Detalle en `.impeccable/surfaces/`.
 
 ## Estructura del proyecto
 
@@ -205,7 +207,7 @@ src/
 ├── config.ts                  # lectura de import.meta.env
 ├── api/                       # cliente, tipos, errores, keys, funciones de red
 ├── features/
-│   ├── auth/  employees/  departments/  job-titles/  org-chart/  users/
+│   ├── auth/  today/  employees/  departments/  job-titles/  org-chart/  users/
 ├── drawers/                   # DrawerHost
 ├── components/
 │   ├── ui/                    # shadcn + EmployeeAvatar
@@ -223,7 +225,7 @@ Convención: `api/*.ts` son funciones de red sin React; los hooks de Query viven
 |---|---|
 | Lint | `npm run lint` (oxlint) |
 | Tipos | `tsc -b` (incluido en `npm run build`) |
-| Tests | Vitest + Testing Library (pendiente) |
+| Tests | Vitest + Testing Library (pendiente). Los flujos de crear y editar se probaron con un script de Playwright contra una API simulada, fuera del repo |
 | Mock de API | MSW con los códigos de error de la API (pendiente) |
 | E2E | Playwright (pendiente) |
 
@@ -235,13 +237,14 @@ Accesibilidad: labels en formularios, errores con `role="alert"` y `aria-describ
 |---|---|---|
 | 1 | Base: Vite, Tailwind, shadcn, proxy, cliente, Query, Toaster | Hecha |
 | 2 | Auth: login, signup, sesión, permisos | Hecha; conectada a Railway |
-| 3 | Empleados: lista y ficha (lectura) | Hecha |
-| 4 | Empleados: alta, edición, baja/reactivar | Pendiente |
-| 5 | Asignar puesto | Pendiente |
-| 6 | Departamentos y puestos (vistas y formularios) | Pendiente |
-| 7 | Organigrama | Pendiente |
+| 3 | Empleados: lista y ficha | Hecha |
+| 4 | Empleados: alta, edición, baja/reactivar | Hecha |
+| 5 | Asignar puesto | Hecha |
+| 6 | Departamentos y puestos (vistas y formularios) | Hecha |
+| 7 | Organigrama | Hecha |
 | 8 | Gestión de usuarios (vista admin con `users:write`) | Pendiente |
-| 9 | Pulido: tests, E2E, `DESIGN.md`, arreglos del revisor de diseño | Pendiente |
+| 9 | Vista «Hoy» y rediseño sobre la referencia aportada | Hecha |
+| 10 | Pulido: tests, `DESIGN.md`, revisión de diseño independiente | Pendiente |
 
 ## Decisiones abiertas
 

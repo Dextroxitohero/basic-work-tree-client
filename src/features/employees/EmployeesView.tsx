@@ -1,17 +1,12 @@
-import { Search, SearchX, Users } from 'lucide-react'
+import { Plus, Search, SearchX, Users } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Employee, EmployeeListParams, EmployeeSort, SortOrder } from '@/api/types'
+import { FilterSelect } from '@/components/FilterSelect'
+import { StateBlock } from '@/components/StateBlock'
+import { StatusPill } from '@/components/StatusPill'
 import { EmployeeAvatar } from '@/components/ui/EmployeeAvatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -21,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useDrawer } from '@/drawers/useDrawer'
+import { useCan } from '@/features/auth/store'
 import { useDepartmentNames, useDepartments } from '@/features/departments/hooks'
 import { useUrlState } from '@/hooks/useUrlState'
 import { tintFor } from '@/lib/dept-color'
@@ -55,17 +52,16 @@ function useDebounced<T>(value: T, ms: number): T {
 
 export function EmployeesView() {
   const url = useUrlState()
+  const { open } = useDrawer()
+  const canCreate = useCan('employees:write')
   const status = (url.get('status') as StatusFilter | null) ?? 'active'
   const department = url.get('dept') ?? ALL_DEPARTMENTS
   const sortValue = url.get('sort') ?? 'last_name:asc'
 
-  // El texto escrito es local; a la URL y a la API llega con debounce.
-  const [search, setSearch] = useState(url.get('q') ?? '')
+  // La URL es la fuente de verdad del texto (la búsqueda global también escribe ahí);
+  // a la API llega con debounce.
+  const search = url.get('q') ?? ''
   const q = useDebounced(search.trim(), 300)
-  useEffect(() => {
-    if ((url.get('q') ?? '') !== q) url.patch({ q }, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q])
 
   const params = useMemo<EmployeeListParams>(() => {
     const [sort, order] = sortValue.split(':') as [EmployeeSort, SortOrder]
@@ -103,6 +99,11 @@ export function EmployeesView() {
               : `${employees.length}${list.hasNextPage ? '+' : ''} ${employees.length === 1 ? 'persona' : 'personas'}`}
           </p>
         </div>
+        {canCreate && (
+          <Button onClick={() => open('employee-form')}>
+            <Plus aria-hidden /> Nuevo empleado
+          </Button>
+        )}
       </header>
 
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center" role="search">
@@ -113,7 +114,7 @@ export function EmployeesView() {
             aria-label="Buscar empleados"
             placeholder="Buscar por nombre o email"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => url.patch({ q: e.target.value }, { replace: true })}
             className="pl-8"
           />
         </div>
@@ -171,13 +172,16 @@ export function EmployeesView() {
                   <StateBlock
                     icon={filtered ? <SearchX aria-hidden className="size-5" /> : <Users aria-hidden className="size-5" />}
                     title={filtered ? 'Nadie coincide con estos filtros' : 'Aún no hay empleados'}
-                    text={filtered ? 'Prueba con otra búsqueda o quita algún filtro.' : 'Cuando se den de alta, aparecerán aquí.'}
+                    text={filtered ? 'Prueba con otra búsqueda o quita algún filtro.' : canCreate ? 'Da de alta al primero para empezar.' : 'Cuando se den de alta, aparecerán aquí.'}
                     action={
-                      filtered ? (
+                      !filtered && canCreate ? (
+                        <Button onClick={() => open('employee-form')}>
+                          <Plus aria-hidden /> Nuevo empleado
+                        </Button>
+                      ) : filtered ? (
                         <Button
                           variant="outline"
                           onClick={() => {
-                            setSearch('')
                             url.patch({ q: undefined, status: undefined, dept: undefined })
                           }}
                         >
@@ -194,7 +198,7 @@ export function EmployeesView() {
                 key={e.id}
                 employee={e}
                 departmentName={deptName(e.department_id)}
-                onOpen={() => url.patch({ drawer: 'employee', id: e.id })}
+                onOpen={() => open('employee', e.id)}
               />
             ))}
           </TableBody>
@@ -208,35 +212,6 @@ export function EmployeesView() {
         )}
       </div>
     </div>
-  )
-}
-
-function FilterSelect({
-  label,
-  items,
-  value,
-  onChange,
-  className,
-}: {
-  label: string
-  items: { value: string; label: string }[]
-  value: string
-  onChange: (value: string) => void
-  className?: string
-}) {
-  return (
-    <Select items={items} value={value} onValueChange={(v) => v && onChange(v)}>
-      <SelectTrigger aria-label={label} className={className}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent alignItemWithTrigger={false}>
-        {items.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   )
 }
 
@@ -293,14 +268,7 @@ function EmployeeRow({
       </TableCell>
       <TableCell className="num text-muted-foreground hidden xl:table-cell">{formatDate(e.hire_date)}</TableCell>
       <TableCell className="pr-4">
-        {e.is_active ? (
-          <span className="inline-flex items-center gap-2 text-sm">
-            <span aria-hidden className="bg-primary size-1.5 rounded-full" />
-            Activo
-          </span>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground">Baja</Badge>
-        )}
+        <StatusPill tone={e.is_active ? 'ok' : 'neutral'}>{e.is_active ? 'Activo' : 'Baja'}</StatusPill>
       </TableCell>
     </TableRow>
   )
@@ -324,27 +292,4 @@ function SkeletonRows() {
       <TableCell className="pr-4"><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
     </TableRow>
   ))
-}
-
-export function StateBlock({
-  icon,
-  title,
-  text,
-  action,
-}: {
-  icon: React.ReactNode
-  title: string
-  text: string
-  action?: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-      <span className="bg-muted text-muted-foreground grid size-10 place-items-center rounded-full">{icon}</span>
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-muted-foreground mt-1 text-sm">{text}</p>
-      </div>
-      {action}
-    </div>
-  )
 }

@@ -13,29 +13,27 @@ export function OrgMark({ className }: { className?: string }) {
 
 /** Organigrama ilustrativo con datos sintéticos, solo decorativo. */
 export function OrgTreeArt({ className, ...props }: React.SVGProps<SVGSVGElement>) {
-  const line = { stroke: 'white', strokeOpacity: 0.3, strokeWidth: 1.5, fill: 'none' } as const
+  const line = { stroke: 'white', strokeOpacity: 0.32, strokeWidth: 1.5, fill: 'none' } as const
   const person = (x: number, y: number, w: number, ini: string, name: string, role: string, o: number) => (
     <g key={ini + x} opacity={o}>
-      <rect x={x} y={y} width={w} height={52} rx={10} fill="white" fillOpacity={0.13} stroke="white" strokeOpacity={0.4} />
-      <circle cx={x + 26} cy={y + 26} r={14} fill="white" fillOpacity={0.9} />
-      <text x={x + 26} y={y + 30.5} textAnchor="middle" fontSize={11} fontWeight={600} fill="oklch(0.34 0.08 170)">{ini}</text>
+      <rect x={x} y={y} width={w} height={52} rx={12} fill="white" fillOpacity={0.14} stroke="white" strokeOpacity={0.42} />
+      <circle cx={x + 26} cy={y + 26} r={15} fill="white" fillOpacity={0.92} />
+      <text x={x + 26} y={y + 30.5} textAnchor="middle" fontSize={11} fontWeight={600} fill="oklch(0.28 0.14 268)">{ini}</text>
       <text x={x + 49} y={y + 22} fontSize={13} fontWeight={600} fill="white">{name}</text>
-      <text x={x + 49} y={y + 38} fontSize={11.5} fill="white" fillOpacity={0.78}>{role}</text>
+      <text x={x + 49} y={y + 39} fontSize={11.5} fill="white" fillOpacity={0.78}>{role}</text>
     </g>
   )
   return (
-    <svg viewBox="0 0 760 330" className={className} fill="none" role="presentation" {...props}>
-      <path d="M380 52v36M150 88h460M150 88v34M380 88v34M610 88v34" {...line} />
-      <path d="M150 174v34M85 208h130M85 208v34M215 208v34" {...line} />
-      <path d="M610 174v34M545 208h130M545 208v34M675 208v34" {...line} />
-      {person(300, 0, 160, 'LF', 'Lucía F.', 'Directora', 1)}
-      {person(70, 122, 160, 'MG', 'Mateo G.', 'Ingeniería', 0.95)}
-      {person(300, 122, 160, 'VO', 'Valentina O.', 'RR. HH.', 0.95)}
-      {person(530, 122, 160, 'AM', 'Andrés M.', 'Finanzas', 0.95)}
-      {person(15, 242, 140, 'CT', 'Camila T.', 'Desarrollo', 0.85)}
-      {person(145, 242, 140, 'SR', 'Sofía R.', 'Talento', 0.85)}
-      {person(475, 242, 140, 'DH', 'Diego H.', 'Contador', 0.85)}
-      {person(605, 242, 140, 'IR', 'Isabella R.', 'Nómina', 0.85)}
+    <svg viewBox="0 0 400 300" className={className} fill="none" role="presentation" {...props}>
+      <path d="M230 52v28M130 80h200M130 80v28M330 80v28" {...line} />
+      <path d="M130 160v28M60 188h130M60 188v28M190 188v28" {...line} />
+      <path d="M330 160v56" {...line} />
+      {person(160, 0, 140, 'LF', 'Lucía F.', 'Directora', 1)}
+      {person(65, 108, 130, 'MG', 'Mateo G.', 'Ingeniería', 0.95)}
+      {person(265, 108, 130, 'AM', 'Andrés M.', 'Finanzas', 0.95)}
+      {person(0, 216, 120, 'CT', 'Camila T.', 'Desarrollo', 0.85)}
+      {person(130, 216, 120, 'SR', 'Sofía R.', 'Talento', 0.85)}
+      {person(270, 216, 120, 'DH', 'Diego H.', 'Contador', 0.85)}
     </svg>
   )
 }

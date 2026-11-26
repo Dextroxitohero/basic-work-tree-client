@@ -1,16 +1,32 @@
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Pencil, UserMinus, UserPlus } from 'lucide-react'
+import { useState } from 'react'
 import type { EmployeeDetail, PositionHistory } from '@/api/types'
+import { EmployeeLink } from '@/components/EmployeeLink'
+import { StatusPill } from '@/components/StatusPill'
 import { EmployeeAvatar } from '@/components/ui/EmployeeAvatar'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useDrawer } from '@/drawers/useDrawer'
+import { useCan } from '@/features/auth/store'
 import { useDepartmentNames } from '@/features/departments/hooks'
 import { useUrlState } from '@/hooks/useUrlState'
 import { formatDate, formatSalary, fullName } from '@/lib/format'
 import { useUiStore } from '@/stores/ui'
 import { useEmployee } from './hooks'
+import { useDeactivateEmployee, useReactivateEmployee } from './mutations'
 
 type Tab = 'data' | 'positions' | 'reports'
 
@@ -21,13 +37,17 @@ export function EmployeeDrawer({ id, onClose }: { id: string; onClose: () => voi
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="data-[side=right]:sm:max-w-lg gap-0 p-0">
+      <SheetContent className="gap-0 p-0 data-[side=right]:sm:max-w-lg">
         {isPending && <DrawerSkeleton />}
         {isError && (
           <div className="grid gap-3 p-6">
             <SheetTitle>No se pudo cargar la ficha</SheetTitle>
             <SheetDescription>Puede que el empleado ya no exista o que falle la conexión.</SheetDescription>
-            <div><Button variant="outline" onClick={() => refetch()}>Reintentar</Button></div>
+            <div>
+              <Button variant="outline" onClick={() => refetch()}>
+                Reintentar
+              </Button>
+            </div>
           </div>
         )}
         {data && (
@@ -46,9 +66,15 @@ export function EmployeeDrawer({ id, onClose }: { id: string; onClose: () => voi
                 </TabsTrigger>
               </TabsList>
               <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                <TabsContent value="data"><DataTab employee={data} /></TabsContent>
-                <TabsContent value="positions"><PositionsTab history={data.position_history} /></TabsContent>
-                <TabsContent value="reports"><ReportsTab employee={data} /></TabsContent>
+                <TabsContent value="data">
+                  <DataTab employee={data} />
+                </TabsContent>
+                <TabsContent value="positions">
+                  <PositionsTab history={data.position_history} />
+                </TabsContent>
+                <TabsContent value="reports">
+                  <ReportsTab employee={data} />
+                </TabsContent>
               </div>
             </Tabs>
           </>
@@ -59,6 +85,13 @@ export function EmployeeDrawer({ id, onClose }: { id: string; onClose: () => voi
 }
 
 function Header({ employee: e }: { employee: EmployeeDetail }) {
+  const { open } = useDrawer()
+  const canWrite = useCan('employees:write')
+  const canAssign = useCan('positions:write')
+  const [confirmingBaja, setConfirmingBaja] = useState(false)
+  const deactivate = useDeactivateEmployee()
+  const reactivate = useReactivateEmployee()
+
   return (
     <SheetHeader className="gap-4 border-b p-6 pr-14">
       <div className="flex items-center gap-4">
@@ -70,13 +103,54 @@ function Header({ employee: e }: { employee: EmployeeDetail }) {
           </SheetDescription>
         </div>
       </div>
-      <div>
-        {e.is_active ? (
-          <Badge variant="secondary" className="bg-accent text-accent-foreground">Activo</Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground">Dado de baja</Badge>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusPill tone={e.is_active ? 'ok' : 'neutral'} className="mr-1">
+          {e.is_active ? 'Activo' : 'Dado de baja'}
+        </StatusPill>
+        {canWrite && (
+          <Button variant="outline" size="sm" onClick={() => open('employee-form', e.id)}>
+            <Pencil aria-hidden /> Editar
+          </Button>
         )}
+        {canAssign && e.is_active && (
+          <Button variant="outline" size="sm" onClick={() => open('position-form', e.id)}>
+            <UserPlus aria-hidden /> Asignar puesto
+          </Button>
+        )}
+        {canWrite &&
+          (e.is_active ? (
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setConfirmingBaja(true)}>
+              <UserMinus aria-hidden /> Dar de baja
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled={reactivate.isPending} onClick={() => reactivate.mutate(e.id)}>
+              {reactivate.isPending ? 'Reactivando…' : 'Reactivar'}
+            </Button>
+          ))}
       </div>
+
+      <AlertDialog open={confirmingBaja} onOpenChange={setConfirmingBaja}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Dar de baja a {fullName(e)}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se cerrará su puesto actual con la fecha de hoy. Sus subordinados quedarán sin jefe y los departamentos que
+              encargaba quedarán sin encargado. Se conserva el historial, pero al reactivarlo no se recupera nada de eso.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deactivate.isPending}
+              onClick={() => deactivate.mutate(e.id)}
+            >
+              Dar de baja
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SheetHeader>
   )
 }
@@ -100,8 +174,12 @@ function DataTab({ employee: e }: { employee: EmployeeDetail }) {
     <dl className="divide-y">
       <Row label="Email">{e.email}</Row>
       <Row label="Teléfono">{e.phone ?? <span className="text-muted-foreground">—</span>}</Row>
-      <Row label="Departamento">{deptName(e.department_id) ?? <span className="text-muted-foreground">Sin departamento</span>}</Row>
-      <Row label="Ingreso"><span className="num">{formatDate(e.hire_date)}</span></Row>
+      <Row label="Departamento">
+        {deptName(e.department_id) ?? <span className="text-muted-foreground">Sin departamento</span>}
+      </Row>
+      <Row label="Ingreso">
+        <span className="num">{formatDate(e.hire_date)}</span>
+      </Row>
       <Row label="Salario actual">
         {pos ? (
           <span className="inline-flex items-center gap-2">
@@ -137,7 +215,9 @@ function PositionsTab({ history }: { history: PositionHistory[] }) {
           <div className="flex items-start justify-between gap-3">
             <p className="font-medium">{p.job_title.name}</p>
             {p.end_date === null && (
-              <Badge variant="secondary" className="bg-accent text-accent-foreground">Actual</Badge>
+              <Badge variant="secondary" className="bg-accent text-accent-foreground">
+                Actual
+              </Badge>
             )}
           </div>
           <p className="text-muted-foreground num mt-1 text-[13px]">
@@ -152,26 +232,14 @@ function PositionsTab({ history }: { history: PositionHistory[] }) {
 }
 
 function ReportsTab({ employee }: { employee: EmployeeDetail }) {
-  const url = useUrlState()
+  const { open } = useDrawer()
   if (employee.direct_reports.length === 0)
     return <p className="text-muted-foreground py-6 text-center text-sm">No tiene reportes directos.</p>
   return (
     <ul className="-mx-2 grid">
       {employee.direct_reports.map((r) => (
         <li key={r.id}>
-          <button
-            type="button"
-            onClick={() => url.patch({ id: r.id, tab: undefined })}
-            className="hover:bg-muted focus-visible:bg-muted flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left"
-          >
-            <EmployeeAvatar employee={r} className="size-8 text-xs" />
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium">{fullName(r)}</span>
-              <span className="text-muted-foreground block truncate text-[13px]">
-                {r.current_position?.job_title.name ?? 'Sin puesto'}
-              </span>
-            </span>
-          </button>
+          <EmployeeLink employee={r} onOpen={() => open('employee', r.id)} />
         </li>
       ))}
     </ul>

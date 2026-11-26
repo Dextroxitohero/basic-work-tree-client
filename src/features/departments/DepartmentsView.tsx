@@ -1,0 +1,158 @@
+import { Building2, Plus, Search, SearchX } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import type { DepartmentListParams } from '@/api/types'
+import { FilterSelect } from '@/components/FilterSelect'
+import { StateBlock } from '@/components/StateBlock'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useDrawer } from '@/drawers/useDrawer'
+import { useCan } from '@/features/auth/store'
+import { useUrlState } from '@/hooks/useUrlState'
+import { tintFor } from '@/lib/dept-color'
+import { formatDate } from '@/lib/format'
+import { useDepartmentList } from './hooks'
+
+const SORT_ITEMS = [
+  { value: 'name:asc', label: 'Nombre (A–Z)' },
+  { value: 'name:desc', label: 'Nombre (Z–A)' },
+  { value: 'created_at:desc', label: 'Creación (reciente)' },
+  { value: 'created_at:asc', label: 'Creación (antigua)' },
+]
+
+function useDebounced<T>(value: T, ms: number): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), ms)
+    return () => clearTimeout(id)
+  }, [value, ms])
+  return debounced
+}
+
+export function DepartmentsView() {
+  const url = useUrlState()
+  const { open } = useDrawer()
+  const canCreate = useCan('departments:write')
+  const sortValue = url.get('sort') ?? 'name:asc'
+
+  const [search, setSearch] = useState(url.get('q') ?? '')
+  const q = useDebounced(search.trim(), 300)
+  useEffect(() => {
+    if ((url.get('q') ?? '') !== q) url.patch({ q }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q])
+
+  const params = useMemo<DepartmentListParams>(() => {
+    const [sort, order] = sortValue.split(':') as [NonNullable<DepartmentListParams['sort']>, 'asc' | 'desc']
+    return { q: q || undefined, sort, order }
+  }, [q, sortValue])
+
+  const list = useDepartmentList(params)
+  const departments = useMemo(() => list.data?.pages.flatMap((p) => p.items) ?? [], [list.data])
+  const filtered = q !== ''
+
+  return (
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Departamentos</h1>
+          <p className="text-muted-foreground num mt-1 text-sm" aria-live="polite">
+            {list.isPending ? 'Cargando…' : `${departments.length}${list.hasNextPage ? '+' : ''} ${departments.length === 1 ? 'departamento' : 'departamentos'}`}
+          </p>
+        </div>
+        {canCreate && (
+          <Button onClick={() => open('department-form')}>
+            <Plus aria-hidden /> Nuevo departamento
+          </Button>
+        )}
+      </header>
+
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center" role="search">
+        <div className="relative col-span-2 sm:w-auto sm:min-w-60 sm:max-w-xs sm:flex-1">
+          <Search aria-hidden className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+          <Input type="search" aria-label="Buscar departamentos" placeholder="Buscar por nombre" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+        </div>
+        <FilterSelect label="Ordenar por" items={SORT_ITEMS} value={sortValue} onChange={(v) => url.patch({ sort: v === 'name:asc' ? undefined : v })} className="col-span-2 w-full sm:ml-auto sm:w-48" />
+      </div>
+
+      <div className="bg-card overflow-hidden rounded-xl border shadow-[var(--shadow-raised)]">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="pl-4">Departamento</TableHead>
+              <TableHead>Empleados activos</TableHead>
+              <TableHead className="hidden pr-4 md:table-cell">Creado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {list.isPending &&
+              Array.from({ length: 5 }, (_, i) => (
+                <TableRow key={i} className="hover:bg-transparent">
+                  <TableCell className="py-3 pl-4"><Skeleton className="h-4 w-40" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+                  <TableCell className="hidden pr-4 md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+                </TableRow>
+              ))}
+            {list.isError && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={3}>
+                  <StateBlock icon={<SearchX aria-hidden className="size-5" />} title="No se pudo cargar la lista" text="Revisa tu conexión e inténtalo de nuevo." action={<Button variant="outline" onClick={() => list.refetch()}>Reintentar</Button>} />
+                </TableCell>
+              </TableRow>
+            )}
+            {list.isSuccess && departments.length === 0 && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={3}>
+                  <StateBlock
+                    icon={filtered ? <SearchX aria-hidden className="size-5" /> : <Building2 aria-hidden className="size-5" />}
+                    title={filtered ? 'Ningún departamento coincide' : 'Aún no hay departamentos'}
+                    text={filtered ? 'Prueba con otro nombre.' : canCreate ? 'Crea el primero para organizar a tu equipo.' : 'Cuando se creen, aparecerán aquí.'}
+                    action={
+                      filtered ? (
+                        <Button variant="outline" onClick={() => { setSearch(''); url.patch({ q: undefined }) }}>Quitar búsqueda</Button>
+                      ) : canCreate ? (
+                        <Button onClick={() => open('department-form')}><Plus aria-hidden /> Nuevo departamento</Button>
+                      ) : undefined
+                    }
+                  />
+                </TableCell>
+              </TableRow>
+            )}
+            {departments.map((d) => (
+              <TableRow
+                key={d.id}
+                tabIndex={0}
+                aria-label={`Abrir departamento ${d.name}`}
+                onClick={() => open('department', d.id)}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault()
+                    open('department', d.id)
+                  }
+                }}
+                className="cursor-pointer focus-visible:bg-accent/60 focus-visible:outline-none"
+              >
+                <TableCell className="py-3 pl-4">
+                  <span className="inline-flex items-center gap-2.5 font-medium">
+                    <span aria-hidden className="size-2.5 rounded-full" style={{ background: tintFor(d.id).dot }} />
+                    {d.name}
+                  </span>
+                </TableCell>
+                <TableCell className="num">{d.employee_count}</TableCell>
+                <TableCell className="num text-muted-foreground hidden pr-4 md:table-cell">{formatDate(d.created_at)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {list.hasNextPage && (
+          <div className="border-t p-3 text-center">
+            <Button variant="ghost" onClick={() => list.fetchNextPage()} disabled={list.isFetchingNextPage}>
+              {list.isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
